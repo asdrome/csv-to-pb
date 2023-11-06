@@ -7,8 +7,9 @@ import (
 )
 
 func main() {
+	collection := "perfumeria"
 	// Crear una instancia de PocketBase
-	pb := pocketbase.NewPocketBase("https://asdrome-pos-pb.pockethost.io").Collection("cuidados_diarios")
+	pb := pocketbase.NewPocketBase("https://asdrome-pos-pb.pockethost.io").Collection(collection)
 
 	// Datos que deseas enviar a PocketBase
 	/* 	data := map[string]interface{}{
@@ -18,10 +19,10 @@ func main() {
 		"price":    123,
 		"discount": 123,
 	} */
-	var err error
 
+	//_, err := pocketbase.ReadFromCSV("./cuidados-diarios.csv")
 	// Llamar al método create en la instancia de PocketBase
-	err = pb.LoadFromCSV("./cuidados-diarios.csv")
+	err := pb.LoadFromCSV("./" + collection + ".csv")
 	if err != nil {
 		// Manejar el error si es necesario
 		log.Fatalln(err)

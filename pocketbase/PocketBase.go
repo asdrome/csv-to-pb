@@ -4,10 +4,14 @@ import (
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type PocketBase struct {
@@ -86,6 +90,34 @@ func ReadFromCSV(csvFilePath string) ([]map[string]interface{}, error) {
 		return nil, err
 	}
 
+	// Obtener índices de los campos específicos
+	brandIndex := -1
+	imageSrcIndex := -1
+	nameIndex := -1
+	priceIndex := -1
+	discountIndex := -1
+
+	for i, header := range headers {
+		switch header {
+		case "brand":
+			brandIndex = i
+		case "image-src":
+			imageSrcIndex = i
+		case "name":
+			nameIndex = i
+		case "price":
+			priceIndex = i
+		case "discount":
+			discountIndex = i
+		}
+	}
+
+	// Verificar que se encontraron todos los campos
+	if brandIndex == -1 || imageSrcIndex == -1 || nameIndex == -1 || priceIndex == -1 || discountIndex == -1 {
+		log.Fatalln("No se encontraron todos los campos requeridos en el archivo CSV.")
+		return nil, errors.New("campos insuficientes en el archivo CSV")
+	}
+
 	// Inicializar un slice de mapas para almacenar los datos
 	var data []map[string]interface{}
 
@@ -103,9 +135,28 @@ func ReadFromCSV(csvFilePath string) ([]map[string]interface{}, error) {
 		// Crear un mapa para almacenar los datos de esta fila
 		rowData := make(map[string]interface{})
 
-		// Asignar los valores a los encabezados correspondientes
-		for i, value := range record {
-			rowData[headers[i]] = value
+		// Asignar los valores de los campos específicos al mapa
+		rowData["brand"] = record[brandIndex]
+		rowData["image_src"] = record[imageSrcIndex]
+		rowData["name"] = record[nameIndex]
+		// Convertir "price" a un número de punto flotante
+		priceString := strings.Replace(record[priceIndex], "$", "", -1) // Eliminar el símbolo de dólar
+		price, err := strconv.ParseFloat(priceString, 64)
+		if err == nil {
+			rowData["price"] = price
+		} else {
+			log.Println("Error al convertir price a número:", err)
+			rowData["price"] = nil // Otra opción: asignar un valor predeterminado en caso de error
+		}
+
+		// Convertir "discount" a un número entero
+		discountString := strings.Replace(record[discountIndex], "%", "", -1) // Eliminar el signo de porcentaje
+		discount, err := strconv.Atoi(discountString)
+		if err == nil {
+			rowData["discount"] = discount
+		} else {
+			log.Println("Error al convertir discount a número:", err)
+			rowData["discount"] = nil // Otra opción: asignar un valor predeterminado en caso de error
 		}
 
 		// Agregar los datos de esta fila al slice de mapas
@@ -114,7 +165,6 @@ func ReadFromCSV(csvFilePath string) ([]map[string]interface{}, error) {
 
 	return data, nil
 }
-
 func (pb *PocketBase) LoadFromCSV(csvFilePath string) error {
 	// Leer datos del archivo CSV
 	data, err := ReadFromCSV(csvFilePath)
@@ -132,6 +182,9 @@ func (pb *PocketBase) LoadFromCSV(csvFilePath string) error {
 		} else {
 			log.Println("Datos enviados a PocketBase:", record)
 		}
+
+		// Agregar un delay de 1 segundo (1000 milisegundos) entre las peticiones
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	return nil
