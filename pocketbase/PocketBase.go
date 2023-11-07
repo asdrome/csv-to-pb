@@ -14,20 +14,24 @@ import (
 	"time"
 )
 
+// PocketBase represents a client for interacting with the PocketBase API.
 type PocketBase struct {
 	endpoint string
 }
 
+// NewPocketBase creates a new instance of PocketBase client with the specified API endpoint.
 func NewPocketBase(endpoint string) *PocketBase {
 	return &PocketBase{
 		endpoint: endpoint,
 	}
 }
 
+// Collection creates a new PocketBase client for a specific collection.
 func (pb *PocketBase) Collection(collection string) *PocketBase {
 	return NewPocketBase(pb.endpoint + "/api/collections/" + collection + "/records")
 }
 
+// Create sends a POST request to the PocketBase API to create a new record.
 func (pb *PocketBase) Create(data map[string]interface{}) error {
 	// Convertir datos a formato JSON
 	payload, err := json.Marshal(data)
@@ -71,6 +75,7 @@ func (pb *PocketBase) Create(data map[string]interface{}) error {
 	return nil
 }
 
+// ReadFromCSV reads data from a CSV file and returns a slice of maps.
 func ReadFromCSV(csvFilePath string) ([]map[string]interface{}, error) {
 	// Abrir el archivo CSV
 	file, err := os.Open(csvFilePath)
@@ -165,6 +170,8 @@ func ReadFromCSV(csvFilePath string) ([]map[string]interface{}, error) {
 
 	return data, nil
 }
+
+// LoadFromCSV reads data from a CSV file and loads it into PocketBase.
 func (pb *PocketBase) LoadFromCSV(csvFilePath string) error {
 	// Leer datos del archivo CSV
 	data, err := ReadFromCSV(csvFilePath)
@@ -184,7 +191,7 @@ func (pb *PocketBase) LoadFromCSV(csvFilePath string) error {
 		}
 
 		// Agregar un delay de 1 segundo (1000 milisegundos) entre las peticiones
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 	}
 
 	return nil
